@@ -1,0 +1,10 @@
+Hello this is a test.
+Use this file to test a ruby program.
+The ruby program should
+be able to
+count
+the
+number of words and
+lines in this
+text
+file.
