@@ -1,120 +1,159 @@
 #!/usr/bin/env ruby
 
-# A goat, a wolf, and a salad are on one side of a river and you need to get them to the other
-# side using your boat. You can carry one item in your boat to the other side at any given time.
-# However, when the goat and the wolf are left alone the wolf will eat the goat. If the goat and
-# the salad are left alone the goat will eat the salad. As long as you are with them nothin will
-# happen, ie. the wolf won't eat the goat and the goat won't eat the salad.
-#
-# Write a program which determines algorithmically an order in which you carry them all to the
-# other side.
-#
-# Pseudo code:
-#
-# [goat,wolf,sald].each do |object|
-#    if check_for_valid_move(object) == true
-#      move_to_left_side_of_river(object)
-#    end
-#  end
-
 class GoatWolfSalad
-  attr_accessor :boat_arr, :right_side_of_river_arr, :left_side_of_river_arr
+  attr_accessor :boat, :right_side_of_river, :left_side_of_river
 
+  # Initialize the data and begin moving
+  # items from right to left
   def initialize
-    puts "Beginning movement of The goat, the wolf, and the salad..."
-    @boat_arr = ['driver']
-    @right_side_of_river_arr = ['goat', 'wolf', 'salad']
-    @left_side_of_river_arr = []
-    ferry_objects_across_river
+    @boat = ['driver']
+    @right_side_of_river = ['goat', 'wolf', 'salad'].shuffle
+    @left_side_of_river = []
+    puts "Beginning program..."
+    move_to_right_side_of_river
   end
 
-  def ferry_objects_across_river
-    @right_side_of_river_arr.each_with_index do |object, i|
-      puts "Calculating if I can ferry over the #{object} from the right side of the river to the left.."
-      valid_move = check_right_to_left_rules(object, i)
-      if valid_move[:is_valid] == true
-        puts "Yes! I can move the #{object} to the left side of the river"
-        load_boat(object, valid_move[:direction])
+  # Move boat driver to the right side of the river
+  def move_to_right_side_of_river
+    puts "I am now on the right side of the river."
+    begin_moving_right_to_left
+  end
+
+  # Initialize transport of item from the right to the left
+  def begin_moving_right_to_left
+    puts "Let's try moving some objects from the right side of the river to the left side."
+    @right_side_of_river.each_with_index do |object, i|
+      if @left_side_of_river.count >= 3 && @right_side_of_river.count == 0
         break
-      end
-    end
-  end
-
-  def check_right_to_left_rules(object, index)
-    @right_side_of_river_arr.delete(object)
-    @left_side_of_river_arr.push(object)
-    valid_move = { is_valid: true, direction: 'left' }
-
-    if @right_side_of_river_arr.include?('goat') && @right_side_of_river_arr.include?('wolf')
-      puts "Uh oh, can't do that the wolf will eat the goat!"
-      valid_move[:is_valid] = false
-    elsif @right_side_of_river_arr.include?('goat') && @right_side_of_river_arr.include?('salad')
-      puts "Uh oh, can't do that the goat with eat the salad!"
-      valid_move[:is_valid] = false
-    end
-
-    if @left_side_of_river_arr.include?('goat') && @left_side_of_river_arr.include?('wolf')
-      puts "Uh oh, can't do that the wolf will eat the goat!"
-      valid_move[:is_valid] = false
-    elsif @left_side_of_river_arr.include?('goat') && @left_side_of_river_arr.include?('salad')
-      puts "Uh oh, can't do that the goat with eat the salad!"
-      valid_move[:is_valid] = false
-    end
-
-    if valid_move[:is_valid] == true
-      @left_side_of_river_arr.delete(object)
-    else
-      if @left_side_of_river_arr > 1
-        puts "Now maybe let's see if I can bring anything from the left side back to the right side of the river, maybe that will do it..."
-        valid_move = check_left_to_right_rules
-        if valid_move[:is_valid] == true
-          @left_side_of_river_arr.delete(object)
-        else
-          keep_object_on_right_side_of_river(object, index)
-        end
       else
-        keep_object_on_right_side_of_river(object, index)
+        if ferry_object_to_other_side(object, 'left') == true
+          break
+        else
+          @right_side_of_river.insert(i, object)
+          @left_side_of_river.delete(object)
+        end
+      end
+    end
+  end
+
+  # Initialize transport of item from left to the right
+  def begin_moving_left_to_right
+    successfull_move = true
+    puts "Let's try moving some objects from the left side of the river back to the right side."
+    @left_side_of_river.each_with_index do |object, i|
+      if @left_side_of_river.count >= 3 && @right_side_of_river.count == 0
+        break
+      else
+        if ferry_object_to_other_side(object, 'right') == true
+          successfull_move = true
+          break
+        else
+          successfull_move = false
+          @left_side_of_river.insert(i, object)
+          @right_side_of_river.delete(object)
+        end
       end
     end
 
-    return valid_move
+    return successfull_move
   end
 
-  def check_left_to_right_rules
-    
-  end
-
-  def keep_object_on_right_side_of_river(object, index)
-    @right_side_of_river_arr.insert(index, object)
-    @left_side_of_river_arr.delete(object)
-  end
-
-  def load_boat(object, direction)
-    if @boat_arr.count == 1
-      puts "I'm loading up the #{object} onto the boat!"
-      @boat_arr[1] = object
-      return direction == 'left' ? ferry_object_to_left_side_of_river : ferry_object_to_right_side_of_river
+  # Pick up an item on a specific side of the river
+  def pick_up_object(object, direction)
+    if @boat.count == 1
+      puts "I just picked up the #{object}."
+      @boat[1] = object
+      return direction == 'left' ? @right_side_of_river.delete(object) : @left_side_of_river.delete(object)
     else
-      puts "Uh oh! My boat is full, I messed up!"
+      puts "Uh oh! My boat is full!"
     end
   end
 
-  def ferry_object_to_left_side_of_river
-    puts "Now driving over to the left side of the river!"
-    @left_side_of_river_arr.push(@boat_arr[1])
-    @boat_arr.delete(@boat_arr[1])
-    puts "Moving back to the right side of the river, let's see what we have left: "
-    output_stats
-
-    ferry_objects_across_river if @right_side_of_river_arr.count > 0
+  # Ferry item to opposite side
+  def ferry_object_to_other_side(object, direction)
+    if @left_side_of_river.count == 3 && @right_side_of_river.count == 0
+      return true
+    else
+      pick_up_object(object, direction)
+      puts "Ferrying the #{object} to the #{direction} side of the river..."
+      return drop_off_object(direction)
+    end
   end
 
-  def ferry_object_to_right_side_of_river
+  # Drop an item off at side
+  def drop_off_object(direction)
+    if direction == 'left'
+      @left_side_of_river.push(@boat[1])
+    else
+      @right_side_of_river.push(@boat[1])
+    end
+    puts "I just dropped off the #{@boat[1]} on the #{direction} side of the river."
+    @boat.delete(@boat[1])
+    check_stats
+
+    if @left_side_of_river.count == 3 && @right_side_of_river.count == 0
+      puts "Yipee Kai Yayyy Motherfucker! I did it!"
+      return true
+    else
+      return validate(direction)
+    end
   end
 
-  def output_stats
-    puts "One the left side of the river we have: #{@left_side_of_river_arr.join(' ')}"
-    puts "And on the right side of the river we still have: #{@right_side_of_river_arr.join(' ')}"
+  # Make sure no one gets eaten!
+  def validate(direction)
+    puts "Now let's validate that no one will eat each other.."
+    left_side_valid = validate_left_side
+    right_side_valid = validate_right_side
+    if left_side_valid && right_side_valid
+      puts "Yay nobody was eaten! - let's go back to right side and move next object."
+      move_to_right_side_of_river
+      return true
+    elsif direction == 'left' && !left_side_valid && @left_side_of_river.count == 2
+      return begin_moving_left_to_right
+    elsif direction == 'right' && !right_side_valid && @right_side_of_river.count == 2
+      return begin_moving_right_to_left
+    else
+      puts "Uh oh, I fucked up! Let's go back."
+    end
+    return false
+  end
+
+  # Validate the items on the left side of the river
+  def validate_left_side
+    is_valid = true
+
+    if @left_side_of_river.count < 3
+      if @left_side_of_river.include?('goat') && @left_side_of_river.include?('wolf')
+        puts "Uh oh! On the left side of the river it looks like the wolf will eat the goat if I leave!"
+        is_valid = false
+      elsif @left_side_of_river.include?('goat') && @left_side_of_river.include?('salad')
+        puts "Uh oh! On the left side of the river it looks like the goat will eat the salad if I leave!"
+        is_valid = false
+      end
+    end
+    return is_valid
+  end
+
+  # Validate the items on the right side of the river
+  def validate_right_side
+    is_valid = true
+
+    if @right_side_of_river.count > 0
+      if @right_side_of_river.include?('goat') && @right_side_of_river.include?('wolf')
+        puts "Uh oh! On the right side of the river it looks like the wolf will eat the goat if I leave!"
+        is_valid = false
+      elsif @right_side_of_river.include?('goat') && @right_side_of_river.include?('salad')
+        puts "Uh oh! On the right side of the river it looks like the goat will eat the salad if I leave!"
+        is_valid = false
+      end
+    end
+    return is_valid
+  end
+
+  # Output to the user who is currently of the left and right sides
+  def check_stats
+    puts "On the left of the river we now have: #{@left_side_of_river}"
+    puts "And on the right side of the river we still have: #{@right_side_of_river}"
   end
 end
 
